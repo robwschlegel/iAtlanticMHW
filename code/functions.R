@@ -18,26 +18,34 @@ SAMBA_files <- dir("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSm
                    full.names = T, pattern = "_T_")[8:55] # The data for 2010 are missing
 
 # Lon/lat values
-iMirabilis_lonlat <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_iMirabilis.nc") %>% 
-  activate("D1,D0") %>% 
-  hyper_tibble()
-SAMBA_lonlat <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_SAMBA.nc") %>% 
-  activate("D1,D0") %>% 
-  hyper_tibble()
+# iMirabilis_lonlat <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_iMirabilis.nc") %>% 
+#   activate("D1,D0") %>% 
+#   hyper_tibble()
+# save(iMirabilis_lonlat, file = "metadata/iMirabilis_lonlat.RData")
+load("metadata/iMirabilis_lonlat.RData")
+# SAMBA_lonlat <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_SAMBA.nc") %>% 
+#   activate("D1,D0") %>% 
+#   hyper_tibble()
+# save(SAMBA_lonlat, file = "metadata/SAMBA_lonlat.RData")
+load("metadata/SAMBA_lonlat.RData")
 
 # Land masks
-iMirabilis_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_iMirabilis.nc") %>% 
-  hyper_tibble() %>% 
-  filter(tmask == 1) %>% 
-  select(tmask, x, y) %>% 
-  unique() %>% 
-  mutate(row_index = 1:n())
-SAMBA_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_SAMBA.nc") %>% 
-  hyper_tibble() %>% 
-  filter(tmask == 1) %>% 
-  select(tmask, x, y) %>% 
-  unique() %>%  
-  mutate(row_index = 1:n())
+# iMirabilis_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_iMirabilis.nc") %>% 
+#   hyper_tibble() %>% 
+#   filter(tmask == 1) %>% 
+#   select(tmask, x, y) %>% 
+#   unique() %>% 
+#   mutate(row_index = 1:n())
+# save(iMirabilis_mask, file = "metadata/iMirabilis_mask.RData")
+load("metadata/iMirabilis_mask.RData")
+# SAMBA_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_SAMBA.nc") %>% 
+#   hyper_tibble() %>% 
+#   filter(tmask == 1) %>% 
+#   select(tmask, x, y) %>% 
+#   unique() %>%  
+#   mutate(row_index = 1:n())
+# save(SAMBA_mask, file = "metadata/SAMBA_mask.RData")
+load("metadata/SAMBA_mask.RData")
 
 # Plot the mask
 # left_join(SAMBA_mask, SAMBA_lonlat) %>% 
@@ -163,7 +171,7 @@ pipeline_iAtlantic <- function(lon_step, file_names){
 # SAMBA run
 # system.time(
 # plyr::l_ply(min(SAMBA_mask$x):max(SAMBA_mask$x), pipeline_iAtlantic, file_names = SAMBA_files)
-plyr::l_ply(30, pipeline_iAtlantic, file_names = SAMBA_files)
+plyr::l_ply(50, pipeline_iAtlantic, file_names = SAMBA_files)
 # ) # ~40 seconds to ~80 seconds for 1 depending on depth
 
 
