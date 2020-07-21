@@ -51,20 +51,23 @@ SAMBA_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJ
 # Load --------------------------------------------------------------------
 
 # ncdump::NetCDF("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/SAMBA/comressed_1_INALT20.L46-KFS101_1d_19580101_19581231_grid_T_SAMBA.nc")
-# ncdump::NetCDF("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS101_1d_19580101_19581231_grid_T_iMirabilis.nc")
+# ncdump::NetCDF("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS104_1d_19940101_19941231_grid_T_iMirabilis.nc")
 # tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS101_1d_19580101_19581231_grid_T_iMirabilis.nc")
 
-test_file <- tidync(SAMBA_files[30]) %>% 
-  hyper_filter(x = x == 200, y = y == 20) %>% 
-  hyper_tibble(select_var = "votemper") %>% 
-  dplyr::rename(temp = votemper, t = time_counter) %>% 
-  mutate(t = as.Date(as.POSIXct(t, origin = "1900-01-01")))
+# NB: This file appears to be broken
+# ncdf4::nc_open("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS104_1d_19940101_19941231_grid_T_iMirabilis.nc")
+# file.info("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS104_1d_19940101_19941231_grid_T_iMirabilis.nc")
+# file.info("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS104_1d_19950101_19951231_grid_T_iMirabilis.nc")
 
-df <- SAMBA_mask[1,]
-x_sub <- df$x
-y_sub <- df$y
-file_names <- SAMBA_files
-file_name <- file_names[1]
+
+# testers...
+# df <- SAMBA_mask[1,]
+# df <- iMirabilis_mask[1,]
+# x_sub <- df$x
+# y_sub <- df$y
+# file_names <- SAMBA_files
+# file_names <- iMirabilis_files
+# file_name <- file_names[25]
 
 # Load a subset of a single file
 load_iAtlantic_sub <- function(file_name, x_sub, y_sub){
@@ -77,17 +80,19 @@ load_iAtlantic_sub <- function(file_name, x_sub, y_sub){
 }
 
 # Load the same subsets for all files
-load_iAtlantic_files <- function(df, file_names){
+process_iAtlantic <- function(df, file_names){
   x_sub <- df$x; y_sub <- df$y
   res <- plyr::ldply(file_names, load_iAtlantic_sub, .parallel = T,
                      x_sub = x_sub, y_sub = y_sub)
 }
 
-system.time(SAMBA_test <- load_iAtlantic_files(SAMBA_mask[24,], SAMBA_files)) # xxx seconds
-system.time(iMirabilis_test <- load_iAtlantic_files(iMirabilis_mask[13,], iMirabilis_files)) # xxx seconds
+# NB: 1 iMirabilis file is currently broken
+# system.time(iMirabilis_test <- load_iAtlantic_files(iMirabilis_mask[13,], iMirabilis_files[-25])) # 84 seconds
+system.time(SAMBA_test <- process_iAtlantic(SAMBA_mask[24,], SAMBA_files)) # 204 seconds
 
 
 # Detect ------------------------------------------------------------------
+
 
 
 
