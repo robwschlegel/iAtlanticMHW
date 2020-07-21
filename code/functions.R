@@ -61,18 +61,15 @@ SAMBA_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJ
 
 
 # testers...
-# df <- SAMBA_mask[1,]
-# df <- iMirabilis_mask[1,]
-# x_sub <- df$x
-# y_sub <- df$y
+# x_sub <- 24
 # file_names <- SAMBA_files
 # file_names <- iMirabilis_files
 # file_name <- file_names[25]
 
 # Load a subset of a single file
-load_iAtlantic_sub <- function(file_name, x_sub, y_sub){
+load_iAtlantic_sub <- function(file_name, x_sub){
   res_sub <- tidync(file_name) %>% 
-    hyper_filter(x = x == x_sub, y = y == y_sub) %>% 
+    hyper_filter(x = x == x_sub) %>% 
     hyper_tibble(select_var = "votemper") %>% 
     dplyr::rename(temp = votemper, t = time_counter) %>% 
     filter(temp != 0) %>% 
@@ -80,21 +77,68 @@ load_iAtlantic_sub <- function(file_name, x_sub, y_sub){
 }
 
 # Load the same subsets for all files
-process_iAtlantic <- function(df, file_names){
-  x_sub <- df$x; y_sub <- df$y
-  res <- plyr::ldply(file_names, load_iAtlantic_sub, .parallel = T,
-                     x_sub = x_sub, y_sub = y_sub)
+process_iAtlantic <- function(lon_x, file_names){
+  res <- plyr::ldply(file_names, load_iAtlantic_sub, .parallel = T, x_sub = lon_x)
+  return(res)
 }
 
+# Test on one lon x
 # NB: 1 iMirabilis file is currently broken
-# system.time(iMirabilis_test <- load_iAtlantic_files(iMirabilis_mask[13,], iMirabilis_files[-25])) # 84 seconds
-system.time(SAMBA_test <- process_iAtlantic(SAMBA_mask[24,], SAMBA_files)) # 204 seconds
+# system.time(iMirabilis_test <- load_iAtlantic_files(13, iMirabilis_files[-25])) # 84 seconds
+# system.time(SAMBA_test <- process_iAtlantic(24, SAMBA_files)) # 42 seconds
 
 
 # Detect ------------------------------------------------------------------
 
+# This function detects the events in the processed iAtlantic data
+# It returns a heavily cleaned up set of results in the interest of storage space
+# testers...
+# df <- SAMBA_test
+detect_event_iAtlantic <- function(df){
+  # Get the base of the results
+  system.time(
+  res_base <- df %>% 
+    group_by(x, y, deptht) %>% 
+    nest() %>% 
+    mutate(clim = purrr::map(data, ts2clm, climatologyPeriod = c("1981-01-01", "2010-12-31")),
+           event = purrr::map(clim, detect_event),
+           cat = purrr::map(event, category, season = "peak", climatology = FALSE)) %>% 
+    dplyr::select(-data, -clim)
+  ) # 26 seconds for one full SAMBA x slice
+  
+  # Pull out the event data
+  res_event <- res_base %>% 
+    dplyr::select(-cat) %>% 
+    unnest(event) %>% 
+    filter(row_number() %% 2 == 0) %>% 
+    unnest(event) %>% 
+    dplyr::select(x:event_no, duration:intensity_max, intensity_cumulative, rate_onset, rate_decline)
+  
+  # Pull out the category data
+  res_cat <- res_base %>% 
+    dplyr::select(-event) %>% 
+    unnest(cat) %>% 
+    dplyr::select(x:event_name, category, p_moderate:season)
+ 
+  # Join results and exit
+  res_full <- left_join(res_event, res_cat, by = c("x", "y", "deptht", "event_no"))
+  return(res_full)
+}
 
+
+# Pipeline ----------------------------------------------------------------
+
+# The code in this section is used to run the full detection pipeline
+pipeline_iAtlantic <- function(lon_steps, file_names){
+  
+  
+}
+
+# SAMBA run
+pipeline_iAtlantic(min(SAMBA_mask$x):max(SAMBA_mask$x), SAMBA_files)
 
 
 # Visualise ---------------------------------------------------------------
+
+# And finally some visualisations of the results
 
