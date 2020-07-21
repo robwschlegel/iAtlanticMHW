@@ -76,12 +76,6 @@ load_iAtlantic_sub <- function(file_name, x_sub){
   return(res_sub)
 }
 
-# Load the same subsets for all files
-process_iAtlantic <- function(lon_x, file_names){
-  res <- plyr::ldply(file_names, load_iAtlantic_sub, .parallel = T, x_sub = lon_x)
-  return(res)
-}
-
 # Test run for one lon x
 # NB: 1 iMirabilis file is currently broken
 # system.time(iMirabilis_test <-  plyr::ldply(iMirabilis_files[-25], load_iAtlantic_sub, .parallel = T, x_sub = 13)) # 487 seconds
@@ -131,7 +125,7 @@ detect_event_iAtlantic <- function(df){
 # Test run
 # system.time(
 # iMirabilis_MHW_test <- plyr::ddply(iMirabilis_test, c("x", "y", "deptht"), detect_event_iAtlantic, .parallel = T)
-# ) # 4 seconds
+# ) # 582 seconds
 # system.time(
 # SAMBA_MHW_test <- plyr::ddply(SAMBA_test, c("x", "y", "deptht"), detect_event_iAtlantic, .parallel = T)
 # ) # 4 seconds
@@ -168,7 +162,8 @@ pipeline_iAtlantic <- function(lon_step, file_names){
 
 # SAMBA run
 # system.time(
-plyr::l_ply(min(SAMBA_mask$x):max(SAMBA_mask$x), pipeline_iAtlantic, file_names = SAMBA_files)
+# plyr::l_ply(min(SAMBA_mask$x):max(SAMBA_mask$x), pipeline_iAtlantic, file_names = SAMBA_files)
+plyr::l_ply(30, pipeline_iAtlantic, file_names = SAMBA_files)
 # ) # ~40 seconds to ~80 seconds for 1 depending on depth
 
 
