@@ -12,9 +12,9 @@ registerDoParallel(cores = 48)
 detectCores() # Should be 48
 
 # iMirabilis files
-iMirabilis_files <- dir("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis", 
+iMirabilis_files <- dir("/share/projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis", 
                         full.names = T, pattern = "_T_")[8:56] # Some late 60's years are missing so we start from 1970
-SAMBA_files <- dir("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/SAMBA", 
+SAMBA_files <- dir("/share/projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/SAMBA", 
                    full.names = T, pattern = "_T_")[8:55] # The data for 2010 are missing
 
 # Lon/lat values
@@ -22,12 +22,12 @@ SAMBA_files <- dir("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSm
 #   activate("D1,D0") %>% 
 #   hyper_tibble()
 # save(iMirabilis_lonlat, file = "metadata/iMirabilis_lonlat.RData")
-load("metadata/iMirabilis_lonlat.RData")
+load("~/iAtlanticMHW/metadata/iMirabilis_lonlat.RData")
 # SAMBA_lonlat <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_SAMBA.nc") %>% 
 #   activate("D1,D0") %>% 
 #   hyper_tibble()
 # save(SAMBA_lonlat, file = "metadata/SAMBA_lonlat.RData")
-load("metadata/SAMBA_lonlat.RData")
+load("~/iAtlanticMHW/metadata/SAMBA_lonlat.RData")
 
 # Land masks
 # iMirabilis_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_iMirabilis.nc") %>% 
@@ -37,7 +37,7 @@ load("metadata/SAMBA_lonlat.RData")
 #   unique() %>% 
 #   mutate(row_index = 1:n())
 # save(iMirabilis_mask, file = "metadata/iMirabilis_mask.RData")
-load("metadata/iMirabilis_mask.RData")
+load("~/iAtlanticMHW/metadata/iMirabilis_mask.RData")
 # SAMBA_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_SAMBA.nc") %>% 
 #   hyper_tibble() %>% 
 #   filter(tmask == 1) %>% 
@@ -45,7 +45,7 @@ load("metadata/iMirabilis_mask.RData")
 #   unique() %>%  
 #   mutate(row_index = 1:n())
 # save(SAMBA_mask, file = "metadata/SAMBA_mask.RData")
-load("metadata/SAMBA_mask.RData")
+load("~/iAtlanticMHW/metadata/SAMBA_mask.RData")
 
 # Plot the mask
 # left_join(SAMBA_mask, SAMBA_lonlat) %>% 
@@ -158,10 +158,10 @@ pipeline_iAtlantic <- function(lon_step, file_names){
   
   # Save
   if(grepl("SAMBA", file_names[1])){
-    saveRDS(res_MHW, paste0("data/SAMBA/MHW_",lon_step,".Rds"))
+    saveRDS(res_MHW, paste0("~/iAtlanticMHW/data/SAMBA/MHW_",lon_step,".Rds"))
   }
   if(grepl("iMirabilis", file_names[1])){
-    saveRDS(res_MHW, paste0("data/iMirabilis/MHW_",lon_step,".Rds"))
+    saveRDS(res_MHW, paste0("~/iAtlanticMHW/data/iMirabilis/MHW_",lon_step,".Rds"))
   }
   
   # Clean up
