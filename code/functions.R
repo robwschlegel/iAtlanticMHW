@@ -9,13 +9,13 @@ library(tidync)
 library(heatwaveR)
 library(doParallel)
 registerDoParallel(cores = 48)
-detectCores() # Should be 48
+paste0("Cores: ", detectCores()) # Should be 48
 
 # iMirabilis files
 iMirabilis_files <- dir("/share/projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis", 
-                        full.names = T, pattern = "_T_")[8:56] # Some late 60's years are missing so we start from 1970
+                        full.names = T, pattern = "_T_")
 SAMBA_files <- dir("/share/projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/SAMBA", 
-                   full.names = T, pattern = "_T_")[8:55] # The data for 2010 are missing
+                   full.names = T, pattern = "_T_")
 
 # Lon/lat values
 # iMirabilis_lonlat <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_iMirabilis.nc") %>% 
@@ -61,11 +61,6 @@ load("~/iAtlanticMHW/metadata/SAMBA_mask.RData")
 # ncdump::NetCDF("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/SAMBA/comressed_1_INALT20.L46-KFS101_1d_19580101_19581231_grid_T_SAMBA.nc")
 # ncdump::NetCDF("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS104_1d_19940101_19941231_grid_T_iMirabilis.nc")
 # tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS101_1d_19580101_19581231_grid_T_iMirabilis.nc")
-
-# NB: This file appears to be broken
-# ncdf4::nc_open("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS104_1d_19940101_19941231_grid_T_iMirabilis.nc")
-# file.info("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS104_1d_19940101_19941231_grid_T_iMirabilis.nc")
-# file.info("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS104_1d_19950101_19951231_grid_T_iMirabilis.nc")
 
 # testers...
 # x_sub <- 24
@@ -124,7 +119,7 @@ detect_event_iAtlantic <- function(df){
     dplyr::select(-event) %>% 
     unnest(cat) %>% 
     dplyr::select(event_no, event_name, category, p_moderate:season)
- 
+  
   # Join results and exit
   res_full <- left_join(res_event, res_cat, by = c("event_no"))
   return(res_full)
@@ -143,6 +138,9 @@ detect_event_iAtlantic <- function(df){
 
 # The code in this section is used to run the full detection pipeline
 pipeline_iAtlantic <- function(lon_step, file_names){
+  
+  print(paste0("Began run on ",lon_step," at ",Sys.time()))
+  
   # Load the data
   # system.time(
   base_data <- plyr::ldply(file_names, load_iAtlantic_sub, .parallel = T, x_sub = lon_step)
@@ -170,9 +168,14 @@ pipeline_iAtlantic <- function(lon_step, file_names){
 
 # SAMBA run
 # system.time(
-# plyr::l_ply(min(SAMBA_mask$x):max(SAMBA_mask$x), pipeline_iAtlantic, file_names = SAMBA_files)
-plyr::l_ply(50, pipeline_iAtlantic, file_names = SAMBA_files)
-# ) # ~40 seconds to ~80 seconds for 1 depending on depth
+plyr::l_ply(min(SAMBA_mask$x):max(SAMBA_mask$x), pipeline_iAtlantic, file_names = SAMBA_files)
+# plyr::l_ply(80, pipeline_iAtlantic, file_names = SAMBA_files)
+# ) # ~120 seconds to ~200 seconds for 1 depending on depth
+
+# iMirabilis run
+# system.time(
+plyr::l_ply(min(iMirabilis_mask$x):max(iMirabilis_mask$x), pipeline_iAtlantic, file_names = iMirabilis_files)
+# ) # ~xxx seconds for 1 depending on depth
 
 
 # Visualise ---------------------------------------------------------------
