@@ -1,5 +1,7 @@
 # code/functions.R
 # The purpose of this script is to house functions used with the iAtlantic data
+# Currently these functions are called from "~/iAtlantic_pipeline.R",
+# which is not within this project due to SLURM root direcotry convenience
 
 
 # Setup -------------------------------------------------------------------
@@ -11,23 +13,31 @@ library(doParallel)
 registerDoParallel(cores = 48)
 paste0("Cores: ", detectCores()) # Should be 48
 
-# iMirabilis files
-iMirabilis_files <- dir("/share/projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis", 
-                        full.names = T, pattern = "_T_")
-SAMBA_files <- dir("/share/projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/SAMBA", 
-                   full.names = T, pattern = "_T_")
+## NB: For some reason SLURM does not like the dir function
+## So we save the file directories as RData objects to be loaded later
+# iMirabilis file names
+# iMirabilis_files <- dir("/share/projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis", 
+#                         full.names = T, pattern = "_T_")
+# save(iMirabilis_files, file = "/share/people/3503570/iAtlanticMHW/metadata/iMirabilis_files.RData")
+load("/share/people/3503570/iAtlanticMHW/metadata/iMirabilis_files.RData")
+
+# SAMBA file names
+# SAMBA_files <- dir("/share/projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/SAMBA", 
+#                    full.names = T, pattern = "_T_")
+# save(SAMBA_files, file = "/share/people/3503570/iAtlanticMHW/metadata/SAMBA_files.RData")
+load("/share/people/3503570/iAtlanticMHW/metadata/SAMBA_files.RData")
 
 # Lon/lat values
 # iMirabilis_lonlat <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_iMirabilis.nc") %>% 
 #   activate("D1,D0") %>% 
 #   hyper_tibble()
 # save(iMirabilis_lonlat, file = "metadata/iMirabilis_lonlat.RData")
-load("~/iAtlanticMHW/metadata/iMirabilis_lonlat.RData")
+load("/share/people/3503570/iAtlanticMHW/metadata/iMirabilis_lonlat.RData")
 # SAMBA_lonlat <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_SAMBA.nc") %>% 
 #   activate("D1,D0") %>% 
 #   hyper_tibble()
 # save(SAMBA_lonlat, file = "metadata/SAMBA_lonlat.RData")
-load("~/iAtlanticMHW/metadata/SAMBA_lonlat.RData")
+load("/share/people/3503570/iAtlanticMHW/metadata/SAMBA_lonlat.RData")
 
 # Land masks
 # iMirabilis_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_iMirabilis.nc") %>% 
@@ -37,7 +47,7 @@ load("~/iAtlanticMHW/metadata/SAMBA_lonlat.RData")
 #   unique() %>% 
 #   mutate(row_index = 1:n())
 # save(iMirabilis_mask, file = "metadata/iMirabilis_mask.RData")
-load("~/iAtlanticMHW/metadata/iMirabilis_mask.RData")
+load("/share/people/3503570/iAtlanticMHW/metadata/iMirabilis_mask.RData")
 # SAMBA_mask <- tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/mesh_mask/mesh_mask_SAMBA.nc") %>% 
 #   hyper_tibble() %>% 
 #   filter(tmask == 1) %>% 
@@ -45,7 +55,7 @@ load("~/iAtlanticMHW/metadata/iMirabilis_mask.RData")
 #   unique() %>%  
 #   mutate(row_index = 1:n())
 # save(SAMBA_mask, file = "metadata/SAMBA_mask.RData")
-load("~/iAtlanticMHW/metadata/SAMBA_mask.RData")
+load("/share/people/3503570/iAtlanticMHW/metadata/SAMBA_mask.RData")
 
 # Plot the mask
 # left_join(SAMBA_mask, SAMBA_lonlat) %>% 
@@ -63,10 +73,10 @@ load("~/iAtlanticMHW/metadata/SAMBA_mask.RData")
 # tidync("../../../projects/iAtlantic/INALT20.L46_TIDAL_iAtlantic_AJSmit/iMirabilis/comressed_1_INALT20.L46-KFS101_1d_19580101_19581231_grid_T_iMirabilis.nc")
 
 # testers...
-# x_sub <- 24
+# x_sub <- 20
 # file_names <- SAMBA_files
 # file_names <- iMirabilis_files
-# file_name <- file_names[20]
+# file_name <- file_names[1]
 
 # Load a subset of a single file
 load_iAtlantic_sub <- function(file_name, x_sub){
@@ -80,8 +90,7 @@ load_iAtlantic_sub <- function(file_name, x_sub){
 }
 
 # Test run for one lon x
-# NB: 1 iMirabilis file is currently broken
-# system.time(iMirabilis_test <-  plyr::ldply(iMirabilis_files[-25], load_iAtlantic_sub, .parallel = T, x_sub = 13)) # 487 seconds
+# system.time(iMirabilis_test <-  plyr::ldply(iMirabilis_files, load_iAtlantic_sub, .parallel = T, x_sub = 13)) # 487 seconds
 # system.time(SAMBA_test <- plyr::ldply(SAMBA_files, load_iAtlantic_sub, .parallel = T, x_sub = 24)) # 42 seconds
 
 
@@ -139,7 +148,14 @@ detect_event_iAtlantic <- function(df){
 # The code in this section is used to run the full detection pipeline
 pipeline_iAtlantic <- function(lon_step, file_names){
   
-  print(paste0("Began run on ",lon_step," at ",Sys.time()))
+  # Find region name
+  region_name <- str_split(file_names[1], pattern = "_")
+  region_name <- sapply(region_name, "[[", length(region_name[[1]]))
+  region_name <- sapply(str_split(region_name, pattern = ".nc"), "[[", 1)
+  
+  # Create four digit value
+  lon_step_pad <- str_pad(lon_step, width = 4, pad = "0", side = "left")
+  print(paste0("Began run on ",region_name," ",lon_step_pad," at ",Sys.time()))
   
   # Load the data
   # system.time(
@@ -155,30 +171,28 @@ pipeline_iAtlantic <- function(lon_step, file_names){
   rm(base_data); gc()
   
   # Save
-  if(grepl("SAMBA", file_names[1])){
-    saveRDS(res_MHW, paste0("~/iAtlanticMHW/data/SAMBA/MHW_",lon_step,".Rds"))
-  }
-  if(grepl("iMirabilis", file_names[1])){
-    saveRDS(res_MHW, paste0("~/iAtlanticMHW/data/iMirabilis/MHW_",lon_step,".Rds"))
-  }
+  saveRDS(res_MHW, paste0("/share/people/3503570/iAtlanticMHW/data/",region_name,"/MHW_",region_name,"_",lon_step_pad,".Rds"))
   
   # Clean up
   rm(res_MHW); gc()
+  print(paste0("Finished run on ",lon_step_pad," at ",Sys.time()))
 }
 
 # SAMBA run
 # system.time(
-plyr::l_ply(min(SAMBA_mask$x):max(SAMBA_mask$x), pipeline_iAtlantic, file_names = SAMBA_files)
-# plyr::l_ply(80, pipeline_iAtlantic, file_names = SAMBA_files)
+# plyr::l_ply(min(SAMBA_mask$x):max(SAMBA_mask$x), pipeline_iAtlantic, .parallel = F, file_names = SAMBA_files)
+# plyr::l_ply(24, pipeline_iAtlantic, .parallel = F, file_names = SAMBA_files)
 # ) # ~120 seconds to ~200 seconds for 1 depending on depth
 
 # iMirabilis run
 # system.time(
-plyr::l_ply(min(iMirabilis_mask$x):max(iMirabilis_mask$x), pipeline_iAtlantic, file_names = iMirabilis_files)
+# plyr::l_ply(min(iMirabilis_mask$x):max(iMirabilis_mask$x), pipeline_iAtlantic, file_names = iMirabilis_files)
+# plyr::l_ply(1, pipeline_iAtlantic, file_names = iMirabilis_files)
 # ) # ~xxx seconds for 1 depending on depth
 
 
 # Visualise ---------------------------------------------------------------
 
 # And finally some visualisations of the results
+# SAMBA_test <- readRDS("/share/people/3503570/iAtlanticMHW/data/SAMBA/MHW_SAMBA_0020.Rds")
 
